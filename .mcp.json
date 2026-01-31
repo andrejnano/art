@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "art": {
+      "command": "node",
+      "args": ["systems/agent/mcp-server.js"],
+      "cwd": "/Users/nano/dev/andrejnano/art"
+    }
+  }
+}

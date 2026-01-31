@@ -1,0 +1,52 @@
+{
+  "generation": 2,
+  "traits": {
+    "palettes": [
+      { "name": "bioluminescent", "colors": ["#50c8ff", "#78ffc8", "#c88cff", "#ffb464", "#ff64b4"], "sketch": "001" },
+      { "name": "erosion-mono", "colors": ["#c8b4a0", "#283c3c", "#1e1c1a"], "sketch": "002" },
+      { "name": "density-spectrum", "colors": ["#0a0a40", "#1a6060", "#40c080", "#e0ffe0"], "sketch": "003" }
+    ],
+    "noiseScales": [
+      { "value": 0.003, "context": "flow field base", "sketch": "001" },
+      { "value": 0.004, "context": "curl field base", "sketch": "002" }
+    ],
+    "particleCounts": [
+      { "value": 2000, "context": "flow field default", "sketch": "001" },
+      { "value": 3000, "context": "erosion agents", "sketch": "002" }
+    ],
+    "speedRanges": [
+      { "min": 0.5, "max": 6, "context": "particle movement", "sketch": "001" }
+    ],
+    "techniques": [
+      { "name": "flow-field", "description": "Particles following noise gradient", "sketch": "001" },
+      { "name": "curl-noise", "description": "Divergence-free field from noise curl", "sketch": "002" },
+      { "name": "domain-warping", "description": "Noise-of-noise coordinate distortion", "sketch": "001" },
+      { "name": "particle-lifecycle", "description": "Birth/death/respawn with age-based intensity", "sketch": "002" },
+      { "name": "strange-attractor", "description": "Clifford attractor — deterministic iterative system", "sketch": "003" },
+      { "name": "density-accumulation", "description": "Histogram-based rendering — brightness = visit frequency", "sketch": "003" },
+      { "name": "preset-perturbation", "description": "Known-good parameters + seed-based jitter for variety", "sketch": "003" }
+    ]
+  },
+  "successfulPatterns": [
+    {
+      "pattern": "Semi-transparent trail accumulation on dark background",
+      "sketches": ["001", "002"],
+      "effectiveness": "high"
+    },
+    {
+      "pattern": "Noise-driven particle movement with seed reproducibility",
+      "sketches": ["001", "002"],
+      "effectiveness": "high"
+    },
+    {
+      "pattern": "Log-scaled density mapping for wide dynamic range",
+      "sketches": ["003"],
+      "effectiveness": "high"
+    },
+    {
+      "pattern": "Curated presets with seeded perturbation avoids degenerate parameters",
+      "sketches": ["003"],
+      "effectiveness": "high"
+    }
+  ]
+}

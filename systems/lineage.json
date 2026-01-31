@@ -1,0 +1,10 @@
+{
+  "nodes": [
+    { "id": "001", "name": "Flow Field", "level": 0 },
+    { "id": "002", "name": "Curl Erosion", "level": 1 },
+    { "id": "003", "name": "Strange Attractor", "level": 0 }
+  ],
+  "edges": [
+    { "from": "001", "to": "002", "mutation": "gradient noise → curl noise" }
+  ]
+}

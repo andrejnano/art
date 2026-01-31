@@ -1,0 +1,17 @@
+{
+  "name": "art",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Recursive generative art playground",
+  "scripts": {
+    "dev": "live-server --port=3333 --no-browser --quiet",
+    "mcp": "node systems/agent/mcp-server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}

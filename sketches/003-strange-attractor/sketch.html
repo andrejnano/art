@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Strange Attractor — art</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.3/p5.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&family=Instrument+Serif&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --border: #1e1e1e;
+      --text: #999999;
+      --text-dim: #555555;
+      --text-bright: #cccccc;
+      --accent: #e0e0e0;
+      --mono: 'JetBrains Mono', monospace;
+      --serif: 'Instrument Serif', serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.5;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+    }
+
+    .sidebar {
+      width: 260px;
+      min-width: 260px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 20px 16px;
+      gap: 20px;
+    }
+
+    .sidebar h1 {
+      font-family: var(--serif);
+      font-size: 20px;
+      font-weight: 400;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+    }
+
+    .sketch-id {
+      font-size: 10px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .description {
+      font-size: 11px;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    .seed-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .seed-controls label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+    }
+
+    .seed-row { display: flex; gap: 4px; }
+
+    .seed-row input[type="number"] {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text-bright);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 6px 8px;
+      border-radius: 3px;
+      outline: none;
+      -moz-appearance: textfield;
+    }
+
+    .seed-row input::-webkit-inner-spin-button,
+    .seed-row input::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+    .seed-row input:focus { border-color: var(--text-dim); }
+
+    .seed-nav { display: flex; gap: 4px; }
+
+    .seed-nav button, .btn {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 5px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .seed-nav button:hover, .btn:hover {
+      border-color: var(--text-dim);
+      color: var(--text-bright);
+    }
+
+    .params { display: flex; flex-direction: column; gap: 12px; }
+
+    .params h2 {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+      font-weight: 500;
+    }
+
+    .param-group { display: flex; flex-direction: column; gap: 4px; }
+
+    .param-group label {
+      font-size: 11px;
+      color: var(--text);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .param-group label span { color: var(--text-dim); }
+
+    .param-group input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      outline: none;
+    }
+
+    .param-group input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--text);
+      cursor: pointer;
+    }
+
+    .actions { display: flex; flex-direction: column; gap: 6px; margin-top: auto; }
+    .actions .btn { width: 100%; text-align: center; }
+
+    .canvas-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      perspective: 1200px;
+      cursor: grab;
+    }
+
+    .canvas-wrap canvas {
+      display: block;
+      transform-style: preserve-3d;
+      transition: transform 0.15s ease-out;
+    }
+
+    .sidebar-footer {
+      font-size: 10px;
+      color: var(--text-dim);
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+    }
+
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-track { background: transparent; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div>
+      <div class="sketch-id">003</div>
+      <h1>Strange Attractor</h1>
+    </div>
+
+    <p class="description">Every point is inevitable. Four parameters, two equations, infinite structure.</p>
+
+    <div class="seed-controls">
+      <label>seed</label>
+      <div class="seed-row">
+        <input type="number" id="seedInput" value="42" min="0">
+      </div>
+      <div class="seed-nav">
+        <button onclick="prevSeed()" title="Previous seed">&#8592;</button>
+        <button onclick="nextSeed()" title="Next seed">&#8594;</button>
+        <button onclick="randomSeedNav()" title="Random seed">&#8635;</button>
+      </div>
+    </div>
+
+    <div class="params" id="paramsContainer">
+      <h2>attractor</h2>
+    </div>
+
+    <div class="actions">
+      <button class="btn" onclick="saveCanvas(`003-strange-attractor-seed-${currentSeed}`, 'png')">save frame</button>
+      <button class="btn" onclick="restartSketch()">restart</button>
+      <button class="btn" onclick="randomizeAttractor()">randomize attractor</button>
+    </div>
+
+    <div class="sidebar-footer">
+      <span>seed: <span id="seedDisplay">42</span></span>
+      &middot;
+      <span>points: <span id="pointsDisplay">0</span></span>
+    </div>
+  </aside>
+
+  <main class="canvas-wrap" id="canvasContainer">
+  </main>
+
+  <script>
+    // ---- seed management ----
+    let currentSeed = 42;
+    const seedInput = document.getElementById('seedInput');
+    const seedDisplay = document.getElementById('seedDisplay');
+    const pointsDisplay = document.getElementById('pointsDisplay');
+
+    function setSeed(s) {
+      currentSeed = Math.max(0, Math.floor(s));
+      seedInput.value = currentSeed;
+      seedDisplay.textContent = currentSeed;
+      restartSketch();
+    }
+
+    function prevSeed() { setSeed(currentSeed - 1); }
+    function nextSeed() { setSeed(currentSeed + 1); }
+    function randomSeedNav() { setSeed(Math.floor(Math.random() * 100000)); }
+
+    seedInput.addEventListener('change', () => setSeed(parseInt(seedInput.value) || 0));
+
+    // ---- param UI ----
+    function addParam(name, label, defaultVal, min, max, step, onChange) {
+      const container = document.getElementById('paramsContainer');
+      const group = document.createElement('div');
+      group.className = 'param-group';
+
+      const lbl = document.createElement('label');
+      lbl.innerHTML = `${label} <span id="val-${name}">${defaultVal}</span>`;
+
+      const input = document.createElement('input');
+      input.type = 'range';
+      input.id = `slider-${name}`;
+      input.min = min;
+      input.max = max;
+      input.step = step;
+      input.value = defaultVal;
+      input.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        document.getElementById(`val-${name}`).textContent = val;
+        if (onChange) onChange(val);
+      });
+
+      group.appendChild(lbl);
+      group.appendChild(input);
+      container.appendChild(group);
+      return input;
+    }
+
+    function getCanvasSize() {
+      const wrap = document.getElementById('canvasContainer');
+      return Math.max(400, Math.min(wrap.clientWidth, wrap.clientHeight) - 40);
+    }
+
+    // ---- 3D canvas rotation ----
+    // Drag to rotate X/Y, shift+drag for Z, double-click to reset
+    (function() {
+      let isDragging = false;
+      let rotX = 0, rotY = 0, rotZ = 0;
+      let dragStartX, dragStartY, startRotX, startRotY, startRotZ;
+      const wrap = document.getElementById('canvasContainer');
+
+      function applyTransform() {
+        const c = wrap.querySelector('canvas');
+        if (c) c.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg) rotateZ(${rotZ}deg)`;
+      }
+
+      wrap.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        dragStartX = e.clientX;
+        dragStartY = e.clientY;
+        startRotX = rotX; startRotY = rotY; startRotZ = rotZ;
+        wrap.style.cursor = 'grabbing';
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - dragStartX;
+        const dy = e.clientY - dragStartY;
+        if (e.shiftKey) {
+          rotZ = startRotZ + dx * 0.3;
+        } else {
+          rotY = startRotY + dx * 0.3;
+          rotX = startRotX - dy * 0.3;
+        }
+        applyTransform();
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (!isDragging) return;
+        isDragging = false;
+        wrap.style.cursor = 'grab';
+      });
+
+      wrap.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+          isDragging = true;
+          dragStartX = e.touches[0].clientX;
+          dragStartY = e.touches[0].clientY;
+          startRotX = rotX; startRotY = rotY; startRotZ = rotZ;
+        }
+      }, { passive: true });
+
+      window.addEventListener('touchmove', (e) => {
+        if (!isDragging || e.touches.length !== 1) return;
+        const dx = e.touches[0].clientX - dragStartX;
+        const dy = e.touches[0].clientY - dragStartY;
+        rotY = startRotY + dx * 0.3;
+        rotX = startRotX - dy * 0.3;
+        applyTransform();
+      }, { passive: true });
+
+      window.addEventListener('touchend', () => { isDragging = false; });
+
+      wrap.addEventListener('dblclick', () => {
+        rotX = 0; rotY = 0; rotZ = 0;
+        applyTransform();
+      });
+    })();
+
+    // ---- seeded RNG (mulberry32) ----
+    function createRNG(seed) {
+      let s = seed | 0;
+      function next() {
+        s |= 0;
+        s = (s + 0x6d2b79f5) | 0;
+        let t = Math.imul(s ^ (s >>> 15), 1 | s);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      }
+      return {
+        random: next,
+        range: (a, b) => a + next() * (b - a),
+      };
+    }
+
+    // ============================================================
+    // SKETCH: Strange Attractor (Clifford)
+    // ============================================================
+
+    let canvasSize;
+    let rng;
+    let densityBuffer;  // 2D density accumulator
+    let totalPoints = 0;
+    let maxDensity = 1;
+    let ax = 0.1, ay = 0.1; // persistent attractor state
+
+    // Clifford attractor parameters
+    let paramA = -1.4;
+    let paramB = 1.6;
+    let paramC = 1.0;
+    let paramD = 0.7;
+    let iterPerFrame = 50000;
+    let colorShift = 0;
+
+    // Known beautiful attractor presets, indexed by seed
+    const PRESETS = [
+      { a: -1.4,  b: 1.6,  c: 1.0,  d: 0.7  },  // classic butterfly
+      { a: 1.7,   b: 1.7,  c: 0.6,  d: 1.2  },  // spiral tendrils
+      { a: -1.7,  b: 1.3,  c: -0.1, d: -1.2 },  // dense lace
+      { a: 1.5,   b: -1.8, c: 1.6,  d: 0.9  },  // asymmetric wings
+      { a: -2.0,  b: -2.0, c: -1.2, d: 2.0  },  // cosmic web
+      { a: 1.1,   b: -1.0, c: 1.0,  d: 1.5  },  // radial burst
+      { a: -1.8,  b: -2.0, c: -0.5, d: -0.9 },  // tidal pools
+      { a: 2.01,  b: -2.53, c: 1.61, d: -0.33 }, // fine mesh
+    ];
+
+    function getAttractorParams(seed) {
+      if (seed < PRESETS.length) return { ...PRESETS[seed] };
+      // For seeds beyond presets: take a preset as base + small perturbation
+      // This guarantees every seed produces an interesting attractor
+      const base = PRESETS[seed % PRESETS.length];
+      const r = createRNG(seed);
+      return {
+        a: base.a + r.range(-0.3, 0.3),
+        b: base.b + r.range(-0.3, 0.3),
+        c: base.c + r.range(-0.3, 0.3),
+        d: base.d + r.range(-0.3, 0.3),
+      };
+    }
+
+    function setSliders(a, b, c, d) {
+      paramA = a; paramB = b; paramC = c; paramD = d;
+
+      const sa = document.getElementById('slider-a');
+      const sb = document.getElementById('slider-b');
+      const sc = document.getElementById('slider-c');
+      const sd = document.getElementById('slider-d');
+      if (sa) { sa.value = a; document.getElementById('val-a').textContent = a.toFixed(2); }
+      if (sb) { sb.value = b; document.getElementById('val-b').textContent = b.toFixed(2); }
+      if (sc) { sc.value = c; document.getElementById('val-c').textContent = c.toFixed(2); }
+      if (sd) { sd.value = d; document.getElementById('val-d').textContent = d.toFixed(2); }
+    }
+
+    function randomizeAttractor() {
+      const r = createRNG(Date.now());
+      setSliders(
+        parseFloat(r.range(-2.5, 2.5).toFixed(2)),
+        parseFloat(r.range(-2.5, 2.5).toFixed(2)),
+        parseFloat(r.range(-2.5, 2.5).toFixed(2)),
+        parseFloat(r.range(-2.5, 2.5).toFixed(2))
+      );
+      resetDensity();
+    }
+
+    // Setup params UI
+    addParam('a', 'a', -1.4, -3, 3, 0.01, (v) => { paramA = v; resetDensity(); });
+    addParam('b', 'b', 1.6, -3, 3, 0.01, (v) => { paramB = v; resetDensity(); });
+    addParam('c', 'c', 1.0, -3, 3, 0.01, (v) => { paramC = v; resetDensity(); });
+    addParam('d', 'd', 0.7, -3, 3, 0.01, (v) => { paramD = v; resetDensity(); });
+    addParam('speed', 'iterations/frame', 50000, 5000, 200000, 5000, (v) => { iterPerFrame = v; });
+    addParam('hue', 'color shift', 0, 0, 360, 1, (v) => { colorShift = v; });
+
+    function resetDensity() {
+      if (!densityBuffer) return;
+      for (let i = 0; i < canvasSize * canvasSize; i++) {
+        densityBuffer[i] = 0;
+      }
+      totalPoints = 0;
+      maxDensity = 1;
+    }
+
+    function restartSketch() {
+      rng = createRNG(currentSeed);
+      canvasSize = getCanvasSize();
+      resizeCanvas(canvasSize, canvasSize);
+      densityBuffer = new Float64Array(canvasSize * canvasSize);
+
+      const p = getAttractorParams(currentSeed);
+      setSliders(p.a, p.b, p.c, p.d);
+
+      totalPoints = 0;
+      maxDensity = 1;
+      ax = 0.1;
+      ay = 0.1;
+    }
+
+    // ---- p5 lifecycle ----
+
+    function setup() {
+      canvasSize = getCanvasSize();
+      const canvas = createCanvas(canvasSize, canvasSize);
+      canvas.parent('canvasContainer');
+      pixelDensity(1);
+
+      densityBuffer = new Float64Array(canvasSize * canvasSize);
+
+      const p = getAttractorParams(currentSeed);
+      setSliders(p.a, p.b, p.c, p.d);
+    }
+
+    function draw() {
+      // Warm up the attractor (skip transients)
+      if (totalPoints === 0) {
+        for (let i = 0; i < 1000; i++) {
+          const nx = Math.sin(paramA * ay) + paramC * Math.cos(paramA * ax);
+          const ny = Math.sin(paramB * ax) + paramD * Math.cos(paramB * ay);
+          ax = nx;
+          ay = ny;
+        }
+      }
+
+      // Iterate and accumulate density
+      for (let i = 0; i < iterPerFrame; i++) {
+        const nx = Math.sin(paramA * ay) + paramC * Math.cos(paramA * ax);
+        const ny = Math.sin(paramB * ax) + paramD * Math.cos(paramB * ay);
+        ax = nx;
+        ay = ny;
+
+        // Map attractor coordinates to pixel coordinates
+        // Attractor typically spans roughly [-3, 3]
+        const px = Math.floor(((ax + 3) / 6) * canvasSize);
+        const py = Math.floor(((ay + 3) / 6) * canvasSize);
+
+        if (px >= 0 && px < canvasSize && py >= 0 && py < canvasSize) {
+          const idx = py * canvasSize + px;
+          densityBuffer[idx]++;
+          if (densityBuffer[idx] > maxDensity) {
+            maxDensity = densityBuffer[idx];
+          }
+        }
+      }
+
+      totalPoints += iterPerFrame;
+
+      // Render density to pixels
+      loadPixels();
+      const logMax = Math.log(maxDensity + 1);
+
+      for (let py = 0; py < canvasSize; py++) {
+        for (let px = 0; px < canvasSize; px++) {
+          const idx = py * canvasSize + px;
+          const density = densityBuffer[idx];
+
+          if (density === 0) {
+            // Black background
+            const pi = (py * canvasSize + px) * 4;
+            pixels[pi] = 10;
+            pixels[pi + 1] = 10;
+            pixels[pi + 2] = 10;
+            pixels[pi + 3] = 255;
+          } else {
+            // Log-scaled density to brightness
+            const logDensity = Math.log(density + 1) / logMax;
+            const brightness = Math.pow(logDensity, 0.5); // gamma correction
+
+            // Color based on density — low=deep blue/purple, mid=cyan, high=white
+            const hue = (240 - logDensity * 180 + colorShift) % 360;
+            const sat = (1 - Math.pow(logDensity, 2)) * 80;
+            const bri = brightness * 100;
+
+            // Convert HSB to RGB manually for pixel manipulation
+            const h = hue / 60;
+            const s = sat / 100;
+            const v = bri / 100;
+            const hi = Math.floor(h) % 6;
+            const f = h - Math.floor(h);
+            const p = v * (1 - s);
+            const q = v * (1 - f * s);
+            const t = v * (1 - (1 - f) * s);
+
+            let r, g, b;
+            switch (hi) {
+              case 0: r = v; g = t; b = p; break;
+              case 1: r = q; g = v; b = p; break;
+              case 2: r = p; g = v; b = t; break;
+              case 3: r = p; g = q; b = v; break;
+              case 4: r = t; g = p; b = v; break;
+              case 5: r = v; g = p; b = q; break;
+            }
+
+            const pi = (py * canvasSize + px) * 4;
+            pixels[pi] = Math.floor(r * 255);
+            pixels[pi + 1] = Math.floor(g * 255);
+            pixels[pi + 2] = Math.floor(b * 255);
+            pixels[pi + 3] = 255;
+          }
+        }
+      }
+      updatePixels();
+
+      pointsDisplay.textContent = (totalPoints / 1000000).toFixed(1) + 'M';
+    }
+
+    function windowResized() {
+      restartSketch();
+    }
+  </script>
+</body>
+</html>

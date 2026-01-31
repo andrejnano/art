@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{NAME}} — art</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.3/p5.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&family=Instrument+Serif&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --border: #1e1e1e;
+      --text: #999999;
+      --text-dim: #555555;
+      --text-bright: #cccccc;
+      --accent: #e0e0e0;
+      --mono: 'JetBrains Mono', monospace;
+      --serif: 'Instrument Serif', serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.5;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+    }
+
+    /* sidebar */
+    .sidebar {
+      width: 260px;
+      min-width: 260px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 20px 16px;
+      gap: 20px;
+    }
+
+    .sidebar h1 {
+      font-family: var(--serif);
+      font-size: 20px;
+      font-weight: 400;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+    }
+
+    .sidebar .sketch-id {
+      font-size: 10px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .sidebar .description {
+      font-size: 11px;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    /* seed controls */
+    .seed-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .seed-controls label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+    }
+
+    .seed-row {
+      display: flex;
+      gap: 4px;
+    }
+
+    .seed-row input[type="number"] {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text-bright);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 6px 8px;
+      border-radius: 3px;
+      outline: none;
+      -moz-appearance: textfield;
+    }
+
+    .seed-row input::-webkit-inner-spin-button,
+    .seed-row input::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+    }
+
+    .seed-row input:focus {
+      border-color: var(--text-dim);
+    }
+
+    .seed-nav {
+      display: flex;
+      gap: 4px;
+    }
+
+    .seed-nav button, .btn {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 5px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .seed-nav button:hover, .btn:hover {
+      border-color: var(--text-dim);
+      color: var(--text-bright);
+    }
+
+    /* params */
+    .params {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .params h2 {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+      font-weight: 500;
+    }
+
+    .param-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .param-group label {
+      font-size: 11px;
+      color: var(--text);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .param-group label span {
+      color: var(--text-dim);
+    }
+
+    .param-group input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      outline: none;
+    }
+
+    .param-group input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--text);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .param-group input[type="range"]::-webkit-slider-thumb:hover {
+      background: var(--text-bright);
+    }
+
+    /* actions */
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: auto;
+    }
+
+    .actions .btn {
+      width: 100%;
+      text-align: center;
+    }
+
+    /* canvas area */
+    .canvas-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      perspective: 1200px;
+      cursor: grab;
+    }
+
+    .canvas-wrap canvas {
+      display: block;
+      transform-style: preserve-3d;
+      transition: transform 0.15s ease-out;
+    }
+
+    /* footer info */
+    .sidebar-footer {
+      font-size: 10px;
+      color: var(--text-dim);
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+    }
+
+    .sidebar-footer a {
+      color: var(--text-dim);
+      text-decoration: none;
+    }
+
+    .sidebar-footer a:hover {
+      color: var(--text);
+    }
+
+    /* scrollbar */
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-track { background: transparent; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div>
+      <div class="sketch-id">{{ID}}</div>
+      <h1>{{NAME}}</h1>
+    </div>
+
+    <p class="description">{{DESCRIPTION}}</p>
+
+    <div class="seed-controls">
+      <label>seed</label>
+      <div class="seed-row">
+        <input type="number" id="seedInput" value="42" min="0">
+      </div>
+      <div class="seed-nav">
+        <button onclick="prevSeed()" title="Previous seed">←</button>
+        <button onclick="nextSeed()" title="Next seed">→</button>
+        <button onclick="randomSeed()" title="Random seed">⟳</button>
+      </div>
+    </div>
+
+    <div class="params" id="paramsContainer">
+      <h2>parameters</h2>
+      <!-- params injected by sketch script -->
+    </div>
+
+    <div class="actions">
+      <button class="btn" onclick="saveFrame(`{{ID}}-seed-${currentSeed}.png`)">save frame</button>
+    </div>
+
+    <div class="sidebar-footer">
+      <span>seed: <span id="seedDisplay">42</span></span>
+    </div>
+  </aside>
+
+  <main class="canvas-wrap" id="canvasContainer">
+  </main>
+
+  <script>
+    // --- seed management ---
+    let currentSeed = 42;
+    const seedInput = document.getElementById('seedInput');
+    const seedDisplay = document.getElementById('seedDisplay');
+
+    function setSeed(s) {
+      currentSeed = Math.max(0, Math.floor(s));
+      seedInput.value = currentSeed;
+      seedDisplay.textContent = currentSeed;
+      if (typeof restartSketch === 'function') restartSketch();
+    }
+
+    function prevSeed() { setSeed(currentSeed - 1); }
+    function nextSeed() { setSeed(currentSeed + 1); }
+    function randomSeed() { setSeed(Math.floor(Math.random() * 100000)); }
+
+    seedInput.addEventListener('change', () => setSeed(parseInt(seedInput.value) || 0));
+
+    // --- param helpers ---
+    function addParam(name, defaultVal, min, max, step, onChange) {
+      const container = document.getElementById('paramsContainer');
+      const group = document.createElement('div');
+      group.className = 'param-group';
+
+      const label = document.createElement('label');
+      label.innerHTML = `${name} <span id="val-${name}">${defaultVal}</span>`;
+
+      const input = document.createElement('input');
+      input.type = 'range';
+      input.min = min;
+      input.max = max;
+      input.step = step;
+      input.value = defaultVal;
+      input.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        document.getElementById(`val-${name}`).textContent = val;
+        if (onChange) onChange(val);
+      });
+
+      group.appendChild(label);
+      group.appendChild(input);
+      container.appendChild(group);
+
+      return input;
+    }
+
+    // --- p5.js canvas sizing ---
+    function getCanvasSize() {
+      const wrap = document.getElementById('canvasContainer');
+      const size = Math.min(wrap.clientWidth, wrap.clientHeight) - 40;
+      return Math.max(200, size);
+    }
+
+    // ---- 3D canvas rotation ----
+    // Drag to rotate X/Y, shift+drag for Z, double-click to reset
+    (function() {
+      let isDragging = false;
+      let rotX = 0, rotY = 0, rotZ = 0;
+      let dragStartX, dragStartY, startRotX, startRotY, startRotZ;
+      const wrap = document.getElementById('canvasContainer');
+
+      function applyTransform() {
+        const c = wrap.querySelector('canvas');
+        if (c) c.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg) rotateZ(${rotZ}deg)`;
+      }
+
+      wrap.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        dragStartX = e.clientX;
+        dragStartY = e.clientY;
+        startRotX = rotX; startRotY = rotY; startRotZ = rotZ;
+        wrap.style.cursor = 'grabbing';
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - dragStartX;
+        const dy = e.clientY - dragStartY;
+        if (e.shiftKey) {
+          rotZ = startRotZ + dx * 0.3;
+        } else {
+          rotY = startRotY + dx * 0.3;
+          rotX = startRotX - dy * 0.3;
+        }
+        applyTransform();
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (!isDragging) return;
+        isDragging = false;
+        wrap.style.cursor = 'grab';
+      });
+
+      wrap.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+          isDragging = true;
+          dragStartX = e.touches[0].clientX;
+          dragStartY = e.touches[0].clientY;
+          startRotX = rotX; startRotY = rotY; startRotZ = rotZ;
+        }
+      }, { passive: true });
+
+      window.addEventListener('touchmove', (e) => {
+        if (!isDragging || e.touches.length !== 1) return;
+        const dx = e.touches[0].clientX - dragStartX;
+        const dy = e.touches[0].clientY - dragStartY;
+        rotY = startRotY + dx * 0.3;
+        rotX = startRotX - dy * 0.3;
+        applyTransform();
+      }, { passive: true });
+
+      window.addEventListener('touchend', () => { isDragging = false; });
+
+      wrap.addEventListener('dblclick', () => {
+        rotX = 0; rotY = 0; rotZ = 0;
+        applyTransform();
+      });
+    })();
+  </script>
+
+  <!-- sketch-specific code below -->
+  <script>
+    // {{SKETCH_CODE}}
+  </script>
+</body>
+</html>

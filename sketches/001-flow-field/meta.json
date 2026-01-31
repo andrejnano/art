@@ -1,0 +1,22 @@
+{
+  "id": "001",
+  "name": "Flow Field",
+  "created": "2026-01-31",
+  "philosophy": "manifest.md",
+  "libraries": ["p5.js"],
+  "tags": ["flow-field", "particles", "noise", "perlin", "domain-warping"],
+  "defaultSeed": 42,
+  "params": {
+    "noiseScale": { "default": 0.003, "min": 0.001, "max": 0.01, "step": 0.0005 },
+    "particleCount": { "default": 2000, "min": 200, "max": 5000, "step": 100 },
+    "speed": { "default": 2, "min": 0.5, "max": 6, "step": 0.25 },
+    "fadeRate": { "default": 8, "min": 1, "max": 40, "step": 1 },
+    "warpIntensity": { "default": 3, "min": 0, "max": 8, "step": 0.25 }
+  },
+  "recursion": {
+    "level": 0,
+    "ancestors": [],
+    "mutations": [],
+    "evolvesFrom": null
+  }
+}
