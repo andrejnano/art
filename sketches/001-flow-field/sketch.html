@@ -193,15 +193,9 @@
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      perspective: 1200px;
-      cursor: grab;
     }
 
-    .canvas-wrap canvas {
-      display: block;
-      transform-style: preserve-3d;
-      transition: transform 0.15s ease-out;
-    }
+    .canvas-wrap canvas { display: block; }
 
     .sidebar-footer {
       font-size: 10px;
@@ -308,180 +302,87 @@
       return Math.max(400, Math.min(wrap.clientWidth, wrap.clientHeight) - 40);
     }
 
-    // ---- 3D canvas rotation ----
-    // Drag to rotate X/Y, shift+drag for Z, double-click to reset
-    (function() {
-      let isDragging = false;
-      let rotX = 0, rotY = 0, rotZ = 0;
-      let dragStartX, dragStartY, startRotX, startRotY, startRotZ;
-      const wrap = document.getElementById('canvasContainer');
-
-      function applyTransform() {
-        const c = wrap.querySelector('canvas');
-        if (c) c.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg) rotateZ(${rotZ}deg)`;
-      }
-
-      wrap.addEventListener('mousedown', (e) => {
-        isDragging = true;
-        dragStartX = e.clientX;
-        dragStartY = e.clientY;
-        startRotX = rotX; startRotY = rotY; startRotZ = rotZ;
-        wrap.style.cursor = 'grabbing';
-      });
-
-      window.addEventListener('mousemove', (e) => {
-        if (!isDragging) return;
-        const dx = e.clientX - dragStartX;
-        const dy = e.clientY - dragStartY;
-        if (e.shiftKey) {
-          rotZ = startRotZ + dx * 0.3;
-        } else {
-          rotY = startRotY + dx * 0.3;
-          rotX = startRotX - dy * 0.3;
-        }
-        applyTransform();
-      });
-
-      window.addEventListener('mouseup', () => {
-        if (!isDragging) return;
-        isDragging = false;
-        wrap.style.cursor = 'grab';
-      });
-
-      wrap.addEventListener('touchstart', (e) => {
-        if (e.touches.length === 1) {
-          isDragging = true;
-          dragStartX = e.touches[0].clientX;
-          dragStartY = e.touches[0].clientY;
-          startRotX = rotX; startRotY = rotY; startRotZ = rotZ;
-        }
-      }, { passive: true });
-
-      window.addEventListener('touchmove', (e) => {
-        if (!isDragging || e.touches.length !== 1) return;
-        const dx = e.touches[0].clientX - dragStartX;
-        const dy = e.touches[0].clientY - dragStartY;
-        rotY = startRotY + dx * 0.3;
-        rotX = startRotX - dy * 0.3;
-        applyTransform();
-      }, { passive: true });
-
-      window.addEventListener('touchend', () => { isDragging = false; });
-
-      wrap.addEventListener('dblclick', () => {
-        rotX = 0; rotY = 0; rotZ = 0;
-        applyTransform();
-      });
-    })();
-
     // ---- seeded RNG (mulberry32) ----
     function createRNG(seed) {
       let s = seed | 0;
       function next() {
-        s |= 0;
-        s = (s + 0x6d2b79f5) | 0;
+        s |= 0; s = (s + 0x6d2b79f5) | 0;
         let t = Math.imul(s ^ (s >>> 15), 1 | s);
         t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
         return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
       }
-      return {
-        random: next,
-        range: (a, b) => a + next() * (b - a),
-      };
+      return { random: next, range: (a, b) => a + next() * (b - a) };
     }
 
     // ============================================================
-    // SKETCH: Flow Field
+    // SKETCH: Flow Field 3D
     // ============================================================
 
     let particles = [];
-    let canvasSize;
+    let canvasSize, halfSize;
     let rng;
 
-    // tunable params
     let noiseScaleVal = 0.003;
-    let particleCountVal = 2000;
+    let particleCountVal = 600;
     let speedVal = 2;
-    let fadeRateVal = 8;
+    let trailLenVal = 40;
     let warpIntensityVal = 3;
 
-    // palette — bioluminescent traces
     const trailColors = [
-      [80, 200, 255],   // cyan
-      [120, 255, 200],  // aqua-green
-      [200, 140, 255],  // lavender
-      [255, 180, 100],  // warm amber
-      [255, 100, 180],  // pink
+      [80, 200, 255],
+      [120, 255, 200],
+      [200, 140, 255],
+      [255, 180, 100],
+      [255, 100, 180],
     ];
 
-    // setup params UI
     addParam('noiseScale', 'noise scale', 0.003, 0.001, 0.01, 0.0005, (v) => { noiseScaleVal = v; });
-    addParam('particleCount', 'particles', 2000, 200, 5000, 100, (v) => {
-      particleCountVal = v;
-      adjustParticleCount();
+    addParam('particleCount', 'particles', 600, 100, 2000, 50, (v) => {
+      particleCountVal = v; adjustParticleCount();
     });
     addParam('speed', 'speed', 2, 0.5, 6, 0.25, (v) => { speedVal = v; });
-    addParam('fadeRate', 'fade rate', 8, 1, 40, 1, (v) => { fadeRateVal = v; });
+    addParam('trailLen', 'trail length', 40, 10, 80, 5, (v) => { trailLenVal = v; });
     addParam('warpIntensity', 'warp', 3, 0, 8, 0.25, (v) => { warpIntensityVal = v; });
 
     class Particle {
-      constructor(rng, size) {
-        this.x = rng.range(0, size);
-        this.y = rng.range(0, size);
-        this.px = this.x;
-        this.py = this.y;
+      constructor(rng, half) {
+        this.x = rng.range(-half, half);
+        this.y = rng.range(-half, half);
+        this.z = rng.range(-half, half);
+        this.trail = [];
         this.colorIdx = Math.floor(rng.random() * trailColors.length);
-        this.size = size;
       }
-
-      update(size) {
-        this.px = this.x;
-        this.py = this.y;
-
-        // domain warping: offset coordinates with noise
-        const wx = warpIntensityVal * noise(this.x * noiseScaleVal * 0.5, this.y * noiseScaleVal * 0.5);
-        const wy = warpIntensityVal * noise(this.x * noiseScaleVal * 0.5 + 100, this.y * noiseScaleVal * 0.5 + 100);
-
-        const angle = noise(
-          (this.x + wx * 100) * noiseScaleVal,
-          (this.y + wy * 100) * noiseScaleVal,
-          frameCount * 0.002
-        ) * TWO_PI * 2;
-
-        this.x += cos(angle) * speedVal;
-        this.y += sin(angle) * speedVal;
-
-        // wrap around edges
-        if (this.x < 0) this.x = size;
-        if (this.x > size) this.x = 0;
-        if (this.y < 0) this.y = size;
-        if (this.y > size) this.y = 0;
-
-        this.size = size;
-      }
-
-      draw() {
-        const [r, g, b] = trailColors[this.colorIdx];
-        stroke(r, g, b, 15);
-        strokeWeight(0.8);
-        line(this.px, this.py, this.x, this.y);
+      update(half) {
+        const s = noiseScaleVal * 0.5;
+        const wx = warpIntensityVal * noise(this.x * s, this.y * s, this.z * s);
+        const wy = warpIntensityVal * noise(this.x * s + 100, this.y * s + 100, this.z * s + 100);
+        const nx = (this.x + wx * 100) * noiseScaleVal;
+        const ny = (this.y + wy * 100) * noiseScaleVal;
+        const nz = this.z * noiseScaleVal;
+        const theta = noise(nx, ny, nz + frameCount * 0.002) * TWO_PI * 2;
+        const phi = noise(nx + 500, ny + 500, nz + frameCount * 0.002) * PI;
+        this.x += cos(theta) * sin(phi) * speedVal;
+        this.y += sin(theta) * sin(phi) * speedVal;
+        this.z += cos(phi) * speedVal * 0.5;
+        const sz = half * 2;
+        if (this.x < -half) this.x += sz; if (this.x > half) this.x -= sz;
+        if (this.y < -half) this.y += sz; if (this.y > half) this.y -= sz;
+        if (this.z < -half) this.z += sz; if (this.z > half) this.z -= sz;
+        this.trail.push(this.x, this.y, this.z);
+        if (this.trail.length > trailLenVal * 3) this.trail.splice(0, 3);
       }
     }
 
     function initParticles() {
       particles = [];
-      for (let i = 0; i < particleCountVal; i++) {
-        particles.push(new Particle(rng, canvasSize));
-      }
+      halfSize = canvasSize * 0.35;
+      for (let i = 0; i < particleCountVal; i++)
+        particles.push(new Particle(rng, halfSize));
     }
 
     function adjustParticleCount() {
-      while (particles.length < particleCountVal) {
-        particles.push(new Particle(rng, canvasSize));
-      }
-      while (particles.length > particleCountVal) {
-        particles.pop();
-      }
+      while (particles.length < particleCountVal) particles.push(new Particle(rng, halfSize));
+      while (particles.length > particleCountVal) particles.pop();
     }
 
     function restartSketch() {
@@ -489,32 +390,39 @@
       noiseSeed(currentSeed);
       canvasSize = getCanvasSize();
       resizeCanvas(canvasSize, canvasSize);
-      background(10);
       initParticles();
     }
 
-    // ---- p5.js lifecycle ----
-
     function setup() {
       canvasSize = getCanvasSize();
-      const canvas = createCanvas(canvasSize, canvasSize);
+      const canvas = createCanvas(canvasSize, canvasSize, WEBGL);
       canvas.parent('canvasContainer');
-
       rng = createRNG(currentSeed);
       noiseSeed(currentSeed);
-      background(10);
       initParticles();
     }
 
     function draw() {
-      // fade background for trail effect
-      noStroke();
-      fill(10, 10, 10, fadeRateVal);
-      rect(0, 0, width, height);
+      background(10);
+      orbitControl();
+      halfSize = canvasSize * 0.35;
 
+      noFill(); stroke(22); strokeWeight(0.5);
+      box(halfSize * 2);
+
+      for (const p of particles) p.update(halfSize);
+
+      strokeWeight(0.8);
       for (const p of particles) {
-        p.update(canvasSize);
-        p.draw();
+        if (p.trail.length < 6) continue;
+        const [r, g, b] = trailColors[p.colorIdx];
+        stroke(r, g, b, 25);
+        beginShape(LINES);
+        for (let i = 3; i < p.trail.length; i += 3) {
+          vertex(p.trail[i - 3], p.trail[i - 2], p.trail[i - 1]);
+          vertex(p.trail[i], p.trail[i + 1], p.trail[i + 2]);
+        }
+        endShape();
       }
 
       frameDisplay.textContent = frameCount;
@@ -523,7 +431,6 @@
     function windowResized() {
       canvasSize = getCanvasSize();
       resizeCanvas(canvasSize, canvasSize);
-      background(10);
     }
   </script>
 </body>

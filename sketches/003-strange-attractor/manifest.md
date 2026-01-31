@@ -1,39 +1,43 @@
 # Strange Attractor
 
-> Determinism produces apparent complexity. Every point is inevitable.
+> Cyclic symmetry in three dimensions — one parameter governs chaos and order.
 
 ## concept
 
 001 and 002 are stochastic — particles surrendering to noise, tracing fields that could have been otherwise. This piece asks the opposite question: what happens when every point is predetermined?
 
-A Clifford attractor is four parameters and two equations. No randomness in the dynamics, no noise field. Just iteration — feed the output back as input, millions of times. What emerges is structure so intricate it looks organic, but every curve was determined from the start.
+The Thomas attractor is a cyclically symmetric system in 3D. Three equations, one parameter. The damping coefficient b controls the boundary between chaotic wandering and orderly spirals. Near b = 0.208186, the system sits at the edge — neither fully chaotic nor fully periodic. The trajectory never repeats but never escapes.
 
 ## algorithm
 
-Clifford attractor:
+Thomas attractor:
 ```
-x_{n+1} = sin(a * y_n) + c * cos(a * x_n)
-y_{n+1} = sin(b * x_n) + d * cos(b * y_n)
+dx/dt = sin(y) - b * x
+dy/dt = sin(z) - b * y
+dz/dt = sin(x) - b * z
 ```
 
-Each iteration produces a point. Plot millions of points with accumulative density — brighter where the attractor visits more often. The density map reveals the attractor's skeleton.
+Each variable feeds into the next in a cycle (x -> z -> y -> x through the sin terms). The damping term b*x pulls each dimension toward zero. Integration produces a continuous trajectory through 3D space that traces the attractor's structure over time.
 
 ## aesthetic intent
 
-Ghostly, crystalline structure emerging from darkness. Not drawn — revealed, like a long-exposure photograph of something that was always there. The density gradient creates depth without any 3D math.
+A luminous thread weaving through dark space, tracing paths that fold back on themselves without ever closing. The 3D structure reveals itself as you orbit the camera — what looks like noise from one angle resolves into clear channels from another. Color shifts along the trajectory create depth and direction.
 
 ## lineage
 
-New root. Contrasts the noise-driven particle work of 001/002 with pure deterministic iteration. Shares the proven pattern of accumulative marks on dark background, but the source of form is equations, not fields.
+New root. Contrasts the noise-driven particle work of 001/002 with pure deterministic iteration. Where 001 and 002 use many independent particles exploring a field, 003 follows a single trajectory through phase space.
 
 ## parameters
 
-- **a, b, c, d** — the four coefficients that define the attractor's shape. Tiny changes produce radically different forms. These are the DNA of the piece.
-- **iterations per frame** — how fast the attractor reveals itself
-- **color mode** — map density, velocity, or angle to color
+- **b (damping)** — the single parameter that defines the attractor's character. Lower values = more chaotic. Higher values = tighter spirals that decay. The classic value 0.208186 sits at the edge.
+- **dt (time step)** — integration step size. Smaller = more accurate but slower to fill the attractor.
+- **scale** — spatial scaling of the attractor in the viewport.
+- **pts/frame** — how many integration steps per animation frame.
+- **color shift** — rotates the hue mapping along the trajectory.
+- **trail length** — how much of the trajectory is visible at once.
 
 ## open questions
 
-- Can attractor parameters be interpolated smoothly to morph between forms?
-- What if two attractors competed for the same canvas?
-- Could this evolve into 004 by adding noise perturbation — determinism corrupted by stochasticism?
+- What if two trajectories with different initial conditions traced the same attractor simultaneously?
+- Could the damping parameter b be modulated by audio input?
+- What happens at the transition between different attractor basins?

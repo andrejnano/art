@@ -4,15 +4,15 @@
   "created": "2026-01-31",
   "philosophy": "manifest.md",
   "libraries": ["p5.js"],
-  "tags": ["strange-attractor", "clifford", "deterministic", "density-map", "iterative"],
+  "tags": ["strange-attractor", "thomas", "deterministic", "3d", "trajectory"],
   "defaultSeed": 42,
   "params": {
-    "a": { "default": -1.4, "min": -3, "max": 3, "step": 0.01 },
-    "b": { "default": 1.6, "min": -3, "max": 3, "step": 0.01 },
-    "c": { "default": 1.0, "min": -3, "max": 3, "step": 0.01 },
-    "d": { "default": 0.7, "min": -3, "max": 3, "step": 0.01 },
-    "iterPerFrame": { "default": 50000, "min": 5000, "max": 200000, "step": 5000 },
-    "colorShift": { "default": 0, "min": 0, "max": 360, "step": 1 }
+    "b": { "default": 0.208186, "min": 0.1, "max": 0.3, "step": 0.001 },
+    "dt": { "default": 0.04, "min": 0.005, "max": 0.1, "step": 0.005 },
+    "scale": { "default": 50, "min": 20, "max": 120, "step": 1 },
+    "pointsPerFrame": { "default": 200, "min": 50, "max": 1000, "step": 50 },
+    "colorShift": { "default": 0, "min": 0, "max": 360, "step": 1 },
+    "trailLength": { "default": 30000, "min": 5000, "max": 60000, "step": 1000 }
   },
   "recursion": {
     "level": 0,
